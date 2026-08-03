@@ -31,11 +31,15 @@
    cd ai-learning-workflow
    ```
 
-2. 在仓库根目录的 PowerShell 中运行：
+2. **双击仓库根目录的「安装.bat」**，按提示操作即可，无需任何命令行设置。
+   也可以手动用 PowerShell 运行（效果相同）：
 
    ```powershell
    .\install.ps1
    ```
+
+   > 「安装.bat」会自动以「绕过执行策略」的方式启动 install.ps1，
+   > 只对本次生效、不修改系统设置，因此下载/克隆下来的仓库也能直接双击安装。
 
    默认安装到 `%USERPROFILE%\ObsidianVaults\AI学习工作流`。
    常用参数：
@@ -132,9 +136,10 @@ A：需要先安装 Codex CLI 或 Claude Code，并在 Claudian 设置里选择�
 A：安装时已自动执行 `pip install mineru-open-api`（可用 `-SkipMineru` 跳过）。
 手动补救：运行 `_工具\.venv\Scripts\pip.exe install mineru-open-api`。
 
-**Q：`install.ps1` 双击没反应？**
-A：PowerShell 默认禁止运行脚本。请在仓库目录打开 PowerShell，执行
-`Set-ExecutionPolicy -Scope Process Bypass` 后再运行 `.\install.ps1`。
+**Q：`install.ps1` 双击没反应 / 提示"禁止运行脚本"？**
+A：直接双击仓库根目录的「安装.bat」即可，它已内置绕过执行策略的启动方式；
+不需要修改系统设置。手动运行时用
+`powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1`。
 
 **Q：macOS / Linux 能用吗？**
 A：当前一键安装器面向 Windows（.bat 启动器 + PowerShell）。
