@@ -4,6 +4,8 @@
     AI 学习工作流 · 一键安装脚本
 .DESCRIPTION
     在一台新电脑上复现「AI 学习工作流」Obsidian 库：
+      0. 交互模式下会先弹出「选择文件夹」对话框，由你决定库的安装位置
+         （取消则询问是否用默认位置；-NoDialog 可跳过对话框）
       1. 在目标位置创建完整的库目录结构
       2. 复制模板、提示词、Claude 斜杠命令、Obsidian 配置与插件
       3. 创建 Python 虚拟环境并安装拆书依赖（含可选 MinerU 云端 OCR）
@@ -25,10 +27,14 @@
     跳过 Obsidian 插件复制
 .PARAMETER OpenObsidian
     安装完成后用 Obsidian 打开该库
+.PARAMETER NoDialog
+    不弹出文件夹选择对话框（直接使用默认位置；适合脚本化/无人值守安装）
 .PARAMETER Force
     目标目录已存在时不再询问，直接继续
 .EXAMPLE
     .\install.ps1 -OpenObsidian
+.EXAMPLE
+    .\install.ps1 -NoDialog -SkipPython
 #>
 param(
     [string]$VaultPath = "",
@@ -37,6 +43,7 @@ param(
     [switch]$SkipMineru,
     [switch]$SkipPlugins,
     [switch]$OpenObsidian,
+    [switch]$NoDialog,
     [switch]$Force
 )
 
@@ -80,7 +87,34 @@ if (Test-Path -LiteralPath $cfgPath) {
 if (-not $VaultPath -and $cfg.vaultPath) { $VaultPath = [string]$cfg.vaultPath }
 if (-not $PythonPath -and $cfg.pythonPath) { $PythonPath = [string]$cfg.pythonPath }
 if (-not $SkipMineru -and $cfg.installMineru -eq $false) { $SkipMineru = $true }
-if (-not $VaultPath) { $VaultPath = Join-Path $env:USERPROFILE "ObsidianVaults\$VaultName" }
+
+$defaultVaultPath = Join-Path $env:USERPROFILE "ObsidianVaults\$VaultName"
+if (-not $VaultPath) {
+    $VaultPath = $defaultVaultPath
+    # 方案 B：交互模式下弹出「选择文件夹」对话框，让用户自选库的位置。
+    # 所选文件夹将直接作为库目录（与 -VaultPath 语义一致）。
+    if (-not $NoDialog -and [Environment]::UserInteractive) {
+        try {
+            Add-Type -AssemblyName System.Windows.Forms | Out-Null
+            $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+            $dialog.Description = "请选择「AI 学习工作流」库的安装位置：" +
+                "所选文件夹将直接作为库目录（默认：$defaultVaultPath）"
+            $dialog.SelectedPath = Split-Path -Parent $defaultVaultPath
+            $dialog.ShowNewFolderButton = $true
+            if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK -and $dialog.SelectedPath) {
+                $VaultPath = $dialog.SelectedPath
+                Write-OK "已选择安装位置：$VaultPath"
+            } else {
+                $ans = Read-Host "未选择位置。使用默认位置 $defaultVaultPath ？(Y/N)"
+                if ($ans -notmatch "^[yY]") { Write-Host "已取消安装"; exit 1 }
+            }
+            $dialog.Dispose()
+        } catch {
+            Write-Warn "无法弹出文件夹选择对话框，将使用默认位置：$defaultVaultPath"
+            $VaultPath = $defaultVaultPath
+        }
+    }
+}
 $VaultPath = [System.IO.Path]::GetFullPath($VaultPath)
 
 Write-Host ""

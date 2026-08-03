@@ -40,6 +40,12 @@
 
    > 「安装.bat」会自动以「绕过执行策略」的方式启动 install.ps1，
    > 只对本次生效、不修改系统设置，因此下载/克隆下来的仓库也能直接双击安装。
+   >
+   > 安装时**会弹出「选择文件夹」对话框**，由你决定库装到哪里：
+   > 选中的文件夹就是库目录（默认位置
+   > `%USERPROFILE%\ObsidianVaults\AI学习工作流`）；
+   > 点「取消」则询问是否用默认位置，选 N 会退出安装。
+   > 想固定位置或无人值守安装，可用 `-VaultPath "D:\xxx"` 或加 `-NoDialog`。
 
    默认安装到 `%USERPROFILE%\ObsidianVaults\AI学习工作流`。
    常用参数：
@@ -140,6 +146,12 @@ A：安装时已自动执行 `pip install mineru-open-api`（可用 `-SkipMineru
 A：直接双击仓库根目录的「安装.bat」即可，它已内置绕过执行策略的启动方式；
 不需要修改系统设置。手动运行时用
 `powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1`。
+
+**Q：安装时可以自己选库的位置吗？**
+A：可以。双击「安装.bat」后先弹出「选择文件夹」对话框，选中哪个文件夹，
+库就装到哪；点「取消」可用默认位置或退出。想跳过对话框直接用默认位置，
+运行 `.\install.ps1 -NoDialog`；想指定固定位置，运行
+`.\install.ps1 -VaultPath "D:\我的资料\AI学习工作流"`。
 
 **Q：macOS / Linux 能用吗？**
 A：当前一键安装器面向 Windows（.bat 启动器 + PowerShell）。
