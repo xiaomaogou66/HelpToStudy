@@ -1,0 +1,4 @@
+# 批处理文件必须使用 CRLF 行尾，否则 cmd 解析会出错（LF 会导致命令被截断/合并）。
+# 用 -text 让 CRLF 原样入库：git clone 和 GitHub 的 ZIP 下载都能拿到正确的行尾。
+*.bat -text
+*.cmd -text

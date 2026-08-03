@@ -162,7 +162,9 @@ Copy-Item -LiteralPath (Join-Path $RepoRoot "03-学习主题\📌 从这里开�
 Copy-Item -LiteralPath (Join-Path $RepoRoot "04-教材分块\📖 教材分块说明.md") -Destination (Join-Path $VaultPath "04-教材分块\") -Force
 Copy-Item -LiteralPath (Join-Path $RepoRoot "AGENTS.md") -Destination $VaultPath -Force
 Copy-Item -LiteralPath (Join-Path $RepoRoot "CLAUDE.md") -Destination $VaultPath -Force
-Copy-Item -LiteralPath (Join-Path $RepoRoot "_工具\split_textbook.py") -Destination (Join-Path $VaultPath "_工具\") -Force
+# _工具 整目录复制：拆书脚本 + 相对路径启动器 + requirements.txt（排除虚拟环境与缓存）
+robocopy (Join-Path $RepoRoot "_工具") (Join-Path $VaultPath "_工具") /E /XD .venv __pycache__ /NFL /NDL /NJH /NJS /R:2 /W:1 | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "复制 _工具 失败（错误码 $LASTEXITCODE）" }
 Write-OK "内容复制完成"
 
 # ---------- 3. Python 环境 ----------
@@ -211,44 +213,8 @@ if (-not $SkipPython) {
     Write-Warn "已跳过 Python 环境安装（-SkipPython）"
 }
 
-# ---------- 4. 生成启动器 ----------
-Write-Step "第 4 步：生成拆书启动器（_工具/*.bat）"
-$launcherDir = Join-Path $RepoRoot "launchers"
-$tokenFile = Join-Path $VaultPath "_工具\mineru_token.txt"
-$pythonForBat = ""
-if (Test-Path -LiteralPath $venvPy) {
-    $pythonForBat = $venvPy
-} elseif ($py) {
-    $pythonForBat = $py
-} else {
-    $pythonForBat = "python"
-}
-
-# 查找 MinerU CLI：优先本库虚拟环境，其次常见位置
-$mineruCandidates = @(
-    (Join-Path $VaultPath "_工具\.venv\Scripts\mineru-open-api.exe"),
-    "D:\obsidian-vault-mcp\.venv\Scripts\mineru-open-api.exe",
-    "C:\obsidian-vault-mcp\.venv\Scripts\mineru-open-api.exe",
-    (Join-Path $env:USERPROFILE "obsidian-vault-mcp\.venv\Scripts\mineru-open-api.exe")
-)
-$mineruCli = $mineruCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-if (-not $mineruCli) { $mineruCli = $mineruCandidates[0] }
-
-$gbk = [System.Text.Encoding]::GetEncoding(936)
-if (Test-Path -LiteralPath $launcherDir) {
-    foreach ($tpl in Get-ChildItem -LiteralPath $launcherDir -Filter "*.template") {
-        $content = Get-Content -LiteralPath $tpl.FullName -Raw -Encoding UTF8
-        $content = $content.Replace("{{VAULT_PATH}}", $VaultPath).Replace("{{PYTHON}}", $pythonForBat).Replace("{{TOKEN_FILE}}", $tokenFile).Replace("{{MINERU_CLI}}", $mineruCli)
-        $outName = $tpl.BaseName
-        [System.IO.File]::WriteAllText((Join-Path $VaultPath "_工具\$outName"), $content, $gbk)
-    }
-    Write-OK "启动器已生成（自动填入本机路径）"
-} else {
-    Write-Warn "未找到 launchers 模板目录，跳过启动器生成"
-}
-
-# ---------- 5. 收尾 ----------
-Write-Step "第 5 步：收尾"
+# ---------- 4. 收尾 ----------
+Write-Step "第 4 步：收尾"
 Write-Host ""
 Write-Host "============== 安装完成 ==============" -ForegroundColor Green
 Write-Host "  库位置: $VaultPath"
