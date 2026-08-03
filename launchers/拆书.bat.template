@@ -1,0 +1,53 @@
+@echo off
+chcp 936 >nul
+title 拆书工具 - 按章节拆分
+
+set "PY={{PYTHON}}"
+set "SCRIPT={{VAULT_PATH}}\_工具\split_textbook.py"
+set "OUT={{VAULT_PATH}}\04-教材分块"
+
+echo ================================================
+echo   拆书工具：按章节拆分，一章一个文件
+echo   支持 PDF / EPUB / Word(.docx)
+echo ================================================
+echo.
+
+rem 方式一：直接把文件拖到 bat 图标上
+set "FILE=%~1"
+if defined FILE goto run
+
+rem 方式二：把路径粘贴进窗口，按回车
+echo 请把教材文件直接"拖进本窗口"，然后按回车：
+set /p "FILE="
+set "FILE=%FILE:"=%
+
+:run
+if not defined FILE set "FILE="
+if "%FILE%"=="" (
+    echo.
+    echo 没有输入文件路径，即将退出。
+    pause
+    exit /b
+)
+
+echo.
+echo 开始处理：%FILE%
+echo 输出位置：%OUT%
+echo.
+
+"%PY%" "%SCRIPT%" "%FILE%" --out "%OUT%"
+
+if errorlevel 1 goto fail
+echo.
+echo [成功] 拆书完成！
+echo 新文件已保存到：%OUT%
+echo 在 Obsidian 的「04-教材分块」文件夹中查看。
+echo.
+pause
+exit /b
+
+:fail
+echo.
+echo [失败] 处理未成功，请把上方窗口里的错误信息发给 AI。
+echo.
+pause

@@ -1,0 +1,10 @@
+{
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "folder",
+  "newFileFolderPath": "03-学习主题",
+  "attachmentFolderPath": "99-附件",
+  "showUnsupportedFiles": true,
+  "showLineNumber": true,
+  "readableLineLength": false,
+  "useMarkdownLinks": false
+}

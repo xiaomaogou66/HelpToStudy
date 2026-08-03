@@ -1,0 +1,11 @@
+{
+  "quickadd:choice:newtopic": [
+    {
+      "modifiers": [
+        "Mod",
+        "Shift"
+      ],
+      "key": "N"
+    }
+  ]
+}

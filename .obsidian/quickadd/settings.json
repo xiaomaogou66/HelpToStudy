@@ -1,0 +1,47 @@
+{
+  "choices": [
+    {
+      "id": "newtopic",
+      "name": "➕ 新建学习主题",
+      "type": "Template",
+      "command": true,
+      "templatePath": "02-模板/新主题.md",
+      "folder": {
+        "enabled": true,
+        "folders": [
+          "03-学习主题/{{VALUE:请输入主题名称}}"
+        ],
+        "chooseWhenCreatingNote": false,
+        "chooseFromSubfolders": false,
+        "createInSameFolderAsActiveFile": false
+      },
+      "fileNameFormat": {
+        "enabled": true,
+        "format": "{{VALUE:请输入主题名称}}"
+      },
+      "openFile": true
+    },
+    {
+      "id": "newsession",
+      "name": "📝 新建 Session 记录",
+      "type": "Template",
+      "command": true,
+      "templatePath": "02-模板/Session学习记录.md",
+      "folder": {
+        "enabled": true,
+        "folders": [
+          "03-学习主题"
+        ],
+        "chooseWhenCreatingNote": true,
+        "chooseFromSubfolders": true,
+        "createInSameFolderAsActiveFile": false
+      },
+      "fileNameFormat": {
+        "enabled": true,
+        "format": "{{VALUE:请输入Session序号（如 2）}}"
+      },
+      "openFile": true
+    }
+  ],
+  "macros": []
+}

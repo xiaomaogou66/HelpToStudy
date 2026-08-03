@@ -1,0 +1,22 @@
+# ---- 个人内容（默认不纳入版本控制，避免误传到 GitHub）----
+03-学习主题/*/
+04-教材分块/*/
+_备份/
+
+# ---- 密钥与机器专属配置 ----
+.obsidian/plugins/*/data.json
+.obsidian/workspace.json
+.claudian/sessions/
+.claudian/opencode/
+.obsidian-vault-mcp/
+mineru_token.txt
+*_token*.txt
+
+# ---- Python ----
+__pycache__/
+*.pyc
+_工具/.venv/
+
+# ---- 系统 ----
+Thumbs.db
+.DS_Store

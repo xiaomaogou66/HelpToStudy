@@ -1,0 +1,12 @@
+@echo off
+chcp 936 >nul
+title 拆书工具 - OCR 识别版（已停用）
+
+echo ================================================
+echo   本地 OCR（RapidOCR）已停用。
+echo.
+echo   数学书 / 扫描版请统一使用：拆书-MinerU.bat
+echo   MinerU 云端解析：公式转 LaTeX，按章拆分，每日免费 1000 页
+echo ================================================
+echo.
+pause
