@@ -1441,7 +1441,7 @@ def process_file(src: Path, out_root: Path, max_chars: int, overlap: int, args):
         # 一章一个文件，章节内部不再切块（避免截断公式）
         chunk_no += 1
         piece = body
-        preview = re.sub(r"\s+", " ", piece)[:60]
+        preview = re.sub(r"\s+", " ", obsidian_img_links(piece))[:60]
         fname = f"章节{chunk_no:03d}-{safe_name(title)}.md"
         fpath = book_dir / fname
         if num:
