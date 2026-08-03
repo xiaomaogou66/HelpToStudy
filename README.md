@@ -55,8 +55,8 @@
      包含 Copilot、Dataview、QuickAdd、Templater、Claudian、Excalidraw CN）。
    - 打开右侧边栏的 **Claudian**，在设置中选择后端（本机 Codex 或 Claude Code）。
 
-4. 只有扫描版/数学书才需要：双击 `_工具\设置MinerU令牌.bat`，
-   粘贴 [MinerU](https://mineru.net) 的免费 Token（每日 1000 页）。
+4. 大部分中英意文书都可以：双击 `_工具\设置MinerU令牌.bat`，
+   粘贴 [MinerU](https://mineru.net) 的免费 Token。
 
 5. 打开 `00-使用指南\📖 使用说明.md`，开始你的第一个学习主题。
 
