@@ -78,6 +78,21 @@
 核心原则：**笔记就是记忆**。进度永远写在笔记里（frontmatter + 固定标记区），
 AI 只负责读写，不把整个库塞进对话，因此省钱、可长期使用。
 
+### 拆书引擎能力
+
+- 章节识别支持中/英/意/西/法常见标题，包括意大利语序数词课名
+  （`Prima lezione`、`Seconda lezione` … `Sedicesima lezione`），
+  目录页码 `(1)` 格式也能正确识别；
+- 生成的章节笔记里图片统一使用 Obsidian 原生嵌入 `![[图片名]]`，
+  按文件名全库解析，不受书文件夹名里的括号/逗号等特殊字符影响，
+  Obsidian 中必定能显示；
+- OCR 漏掉章节标题时，可用 `--opener-pattern` 补充定位，例如每课都以
+  `## I. Impariamo a parlare` 开头的教材：
+
+  ```powershell
+  python _工具/split_textbook.py "<书>\00-MinerU解析全文.md" --out "04-教材分块" --split-mode chapter --opener-pattern "Impariamo a parlare"
+  ```
+
 ---
 
 ## 目录结构

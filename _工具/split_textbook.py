@@ -49,6 +49,13 @@ SUPPORTED = {".pdf", ".epub", ".docx"}
 # 章节词：英文 / 意大利语 / 西班牙语（含常见 OCR 无重音变体）
 CHAPTER_WORD = r"(?:chapter|chap\.?|capitolo|capitulo|cap[íi]tulo|cap\.?)"
 
+# 锚点/目录用章节词（比 CHAPTER_WORD 更全：含 Lesson/Unit/Lezione 等）
+CHAPTER_WORD_ANCHOR = (
+    r"(?:chapter|chap\.?|lesson|unit|part|module|chapitre|"
+    r"capitolo|capitulo|cap[íi]tulo|lezione|lecci[óo]n|le[çc][oó]n|"
+    r"unidad|unità|unita|parte|m[óo]dulo|modulo|secci[óo]n|sezione)"
+)
+
 CHAPTER_RE = re.compile(
     r"^\s*(?:"
     r"第\s*[0-9一二三四五六七八九十百千万零〇]+\s*[章节卷篇部讲课]"
@@ -570,7 +577,7 @@ def safe_name(name: str, limit: int = 40) -> str:
 
 HEADING_LINE_RE = re.compile(r"^(#{1,4})\s+(.+?)\s*$", re.M)
 CHAPTER_LINE_RE = re.compile(
-    r"^(?:" + CHAPTER_WORD + r")\s*(\d+)\s*[:：.\-–—]?\s*(.+?)\s*(\d{1,4})?\s*$",
+    r"^(?:" + CHAPTER_WORD_ANCHOR + r")\s*(\d+)\s*[:：.\-–—]?\s*(.+?)\s*(\d{1,4})?\s*$",
     re.I,
 )
 CN_CHAPTER_LINE_RE = re.compile(
@@ -671,16 +678,63 @@ PLAIN_NUM_RE = re.compile(
 
 # 带 # 标记的正文章标题：## CHAPTER 2 / # Chapter 1 Title
 MARKED_CHAPTER_RE = re.compile(
-    r"^\s*#{1,4}\s+(?:" + CHAPTER_WORD + r")\s*(\d+)\b\s*(.*)$", re.I
+    r"^\s*#{1,4}\s+(?:" + CHAPTER_WORD_ANCHOR + r")\s*(\d+)\b\s*(.*)$", re.I
 )
 # 无标记的章标题（用于排除，不作为锚点）：CHAPTER 5 等
 PLAIN_CHAPTER_RE = re.compile(
-    r"^\s*(?:" + CHAPTER_WORD + r")\s*(\d+)\b\s*(.*)$", re.I
+    r"^\s*(?:" + CHAPTER_WORD_ANCHOR + r")\s*(\d+)\b\s*(.*)$", re.I
 )
 # 中文"第N章"，带或不带 # 标记
 MARKED_CN_CHAPTER_RE = re.compile(
     r"^\s*#{1,4}\s*第\s*([0-9一二三四五六七八九十百千万零〇]+)\s*章\s*[:：.\-–—]?\s*(.*)$"
 )
+
+# 意大利语序数词章节标题：Prima lezione / Seconda lezione / Lezione prima ...
+# （MinerU 常把这类标题识别为 "# Seconda lezione" 或目录里的 "Prima lezione....(1)"）
+IT_ORDINALS = {
+    "prima": 1, "seconda": 2, "terza": 3, "quarta": 4, "quinta": 5,
+    "sesta": 6, "settima": 7, "ottava": 8, "nona": 9, "decima": 10,
+    "undicesima": 11, "dodicesima": 12, "tredicesima": 13, "quattordicesima": 14,
+    "quindicesima": 15, "sedicesima": 16, "diciassettesima": 17, "diciottesima": 18,
+    "diciannovesima": 19, "ventesima": 20, "ventunesima": 21, "ventiduesima": 22,
+    "ventitreesima": 23, "ventiquattresima": 24, "venticinquesima": 25,
+    "ventiseiesima": 26, "ventisettesima": 27, "ventottesima": 28,
+    "ventinovesima": 29, "trentesima": 30,
+}
+_IT_ORD_ALT = "|".join(IT_ORDINALS)
+_IT_ORD_NOUN = (
+    r"(?:lezione|lezion[èé]|unità|unita|parte|capitolo|capitulo|sezione|modulo|"
+    r"secci[óo]n|lecci[óo]n|unidad)"
+)
+# 带 # 标记（正文标题）：# Prima lezione / ## Lezione seconda（两种语序）
+MARKED_IT_ORDINAL_RE = re.compile(
+    r"^\s*#{1,4}\s*(?:(" + _IT_ORD_ALT + r")\s+" + _IT_ORD_NOUN +
+    r"|" + _IT_ORD_NOUN + r"\s+(" + _IT_ORD_ALT + r"))\s*(.*)$",
+    re.I,
+)
+# 无标记（目录条目/纯文本标题）
+PLAIN_IT_ORDINAL_RE = re.compile(
+    r"^\s*(?:(" + _IT_ORD_ALT + r")\s+" + _IT_ORD_NOUN +
+    r"|" + _IT_ORD_NOUN + r"\s+(" + _IT_ORD_ALT + r"))\s*(.*)$",
+    re.I,
+)
+
+
+def _it_ordinal_from_match(m) -> int | None:
+    """从序数词匹配里取章号：Prima lezione / Lezione prima 两种语序都支持。"""
+    return IT_ORDINALS.get(((m.group(1) or m.group(2)) or "").strip().lower())
+
+
+def obsidian_img_links(text: str) -> str:
+    """把 MinerU 的 Markdown 图片链接 ![](images/xxx.jpg) 转为
+    Obsidian 维基嵌入 ![[xxx.jpg]]：按文件名全库解析，任意目录深度都能显示，
+    不受书文件夹名里的括号/逗号等特殊字符影响。"""
+    return re.sub(
+        r"!\[\]\(images/([^)\s]+\.(?:png|jpe?g|gif|webp|bmp|svg))\)",
+        r"![[\1]]",
+        text,
+        flags=re.I,
+    )
 
 # 目录条目引导点（……/.../···）
 LEADER_DOTS_RE = re.compile(r"[.…·]{2,}")
@@ -763,6 +817,13 @@ def _toc_entry(s: str):
             m3 = re.match(r"^\s*(\d{1,2})\s+(.+?)\s*$", s)
             if m3:
                 num_raw, title_raw = m3.group(1), m3.group(2)
+        m4 = PLAIN_IT_ORDINAL_RE.match(s)
+        if m4:
+            num = _it_ordinal_from_match(m4)
+            if num is not None:
+                title = _clean_toc_title(re.sub(r"^\s*#{1,6}\s*", "", s).strip())
+                if title and len(title) >= 2 and len(title) <= 100:
+                    return num, title
     if num_raw is None:
         return None
     num = _cn_to_int(num_raw)
@@ -894,8 +955,10 @@ def _in_dense_chapter_cluster(lines, i: int, scan_end: int) -> bool:
         if (
             MARKED_CHAPTER_RE.match(s)
             or MARKED_CN_CHAPTER_RE.match(s)
+            or MARKED_IT_ORDINAL_RE.match(s)
             or PLAIN_CHAPTER_RE.match(core)
             or CN_CHAPTER_LINE_RE.match(core)
+            or PLAIN_IT_ORDINAL_RE.match(core)
         ):
             chap_like += 1
         elif len(s) > 100:
@@ -955,6 +1018,17 @@ def _collect_anchors(lines, scan_end: int):
                     title = (m2.group(2) or "").strip()
                     anchors.setdefault(num, []).append(("chapter", i, title))
             continue
+        m2b = MARKED_IT_ORDINAL_RE.match(s)
+        if m2b:
+            num = _it_ordinal_from_match(m2b)
+            if num is not None:
+                toc_like = bool(re.search(r"\s\d{1,4}\s*$", s))
+                if not toc_like and not _in_dense_chapter_cluster(
+                    lines, i, scan_end
+                ):
+                    title = re.sub(r"^#{1,6}\s*", "", s).strip()
+                    anchors.setdefault(num, []).append(("chapter", i, title))
+            continue
         m3 = MARKED_SECTION_RE.match(s)
         if m3:
             num = _cn_to_int(m3.group(1))
@@ -968,8 +1042,11 @@ def _collect_anchors(lines, scan_end: int):
                     anchors.setdefault(num, []).append(("section", i, ""))
             continue
         # 纯章名标题候选：不带页码的 # 标题行（后续与目录章名精确比对）
-        toc_like = bool(re.search(r"\s\d{1,4}\s*$", s))
-        if not toc_like:
+        toc_like = bool(
+            re.search(r"\s\d{1,4}\s*$", s)
+            or re.search(r"\(\s*\d{1,4}\s*\)\s*$", s)  # 目录页码 (1) 格式
+        )
+        if s.startswith("#") and not toc_like:
             title = re.sub(r"^#{1,6}\s*", "", s).strip()
             if title and len(title) <= 80:
                 titles.append((i, title))
@@ -992,6 +1069,7 @@ def _backtrack_opener(lines, start_line: int, prev_line: int, scan_end: int):
             MARKED_SECTION_RE.match(s)
             or MARKED_CHAPTER_RE.match(s)
             or MARKED_CN_CHAPTER_RE.match(s)
+            or MARKED_IT_ORDINAL_RE.match(s)
         ):
             return None
     return None
@@ -1018,10 +1096,10 @@ def _find_title_anchor(titles, tn: str, prev_line: int):
     return None
 
 
-def _build_bounds(toc, anchors, titles, lines, offsets, scan_end: int) -> list:
+def _build_bounds(toc, anchors, titles, lines, offsets, scan_end: int, opener_re=None) -> list:
     """按章号把"锚点 + 目录名单"合成正文起点，返回 [(num, title, char_pos), ...]。"""
     nums = sorted(set(toc) | set(anchors))
-    bounds = []
+    anchor_map = {}
     prev_anchor_line = -1
     for num in nums:
         entries = anchors.get(num, [])
@@ -1045,14 +1123,70 @@ def _build_bounds(toc, anchors, titles, lines, offsets, scan_end: int) -> list:
                 back = _backtrack_opener(lines, anchor_line, prev_anchor_line, scan_end)
                 if back is not None and back > prev_anchor_line:
                     anchor_line = back
-        if anchor_line is None:
-            continue
-        if anchor_line <= prev_anchor_line:
+        if anchor_line is None or anchor_line <= prev_anchor_line:
             # 顺序异常：跳过该章（记入缺失），绝不硬造连续行
+            continue
+        anchor_map[num] = anchor_line
+        prev_anchor_line = anchor_line
+
+    # 回退：正文缺失章节标题（OCR 未识别）时，用"每章都有的开场标志"补齐，
+    # 如 "--opener-pattern 'Impariamo a parlare'"。数量校验：相邻已知章节之间，
+    # 开场行数必须恰好 = 缺失章数 + 1（多出的第一行属于上一章自己的开场），
+    # 校验不过则放弃，绝不硬造分界。
+    if opener_re:
+        known = [n for n in nums if n in anchor_map]
+        # 先补"开头缺失章"（第一已知章之前）：开场行数 == 缺失章数
+        if known:
+            first_k = known[0]
+            hi = anchor_map[first_k]
+            lead_missing = [
+                n for n in nums
+                if n < first_k and n not in anchor_map and toc.get(n)
+            ]
+            if lead_missing:
+                openers = [
+                    i for i in range(0, hi)
+                    if lines[i].lstrip().startswith("#") and opener_re.search(lines[i])
+                ]
+                if len(openers) == len(lead_missing):
+                    for k, mn in enumerate(sorted(lead_missing)):
+                        anchor_map[mn] = openers[k]
+                        known.append(mn)
+        # 再补"中间缺失章"（相邻已知章之间）
+        for num in nums:
+            if num in anchor_map:
+                continue
+            prev_k = max((n for n in known if n < num), default=None)
+            next_k = min((n for n in known if n > num), default=None)
+            if prev_k is None and next_k is None:
+                continue
+            lo = anchor_map[prev_k] if prev_k is not None else -1
+            hi = anchor_map[next_k] if next_k is not None else scan_end
+            lo_num = prev_k if prev_k is not None else -1
+            hi_num = next_k if next_k is not None else 10**9
+            missing = [
+                n for n in nums
+                if lo_num < n < hi_num and n not in anchor_map and toc.get(n)
+            ]
+            openers = [
+                i for i in range(lo + 1, hi)
+                if lines[i].lstrip().startswith("#") and opener_re.search(lines[i])
+            ]
+            if len(openers) != len(missing) + 1:
+                continue
+            for k, mn in enumerate(sorted(missing)):
+                anchor_map[mn] = openers[k + 1]
+                known.append(mn)
+
+    bounds = []
+    prev_anchor_line = -1
+    for num in nums:
+        anchor_line = anchor_map.get(num)
+        if anchor_line is None or anchor_line <= prev_anchor_line:
             continue
         title = toc.get(num)
         if not title:
-            for _kind, _i, t in entries:
+            for _kind, _i, t in anchors.get(num, []):
                 t2 = _clean_anchor_title(t)
                 if t2:
                     title = t2
@@ -1064,7 +1198,7 @@ def _build_bounds(toc, anchors, titles, lines, offsets, scan_end: int) -> list:
     return bounds
 
 
-def build_chapter_plan(text: str):
+def build_chapter_plan(text: str, opener_pattern: str = ""):
     """多锚点章节识别引擎。
 
     处理三类疑难：① 章节标题用特殊字体、MinerU 未识别 → 用小节编号/章首页标记定位；
@@ -1085,7 +1219,13 @@ def build_chapter_plan(text: str):
     scan_end = cutoff if cutoff is not None else len(lines)
     toc = _extract_toc(lines, scan_end)
     anchors, titles = _collect_anchors(lines, scan_end)
-    bounds = _build_bounds(toc, anchors, titles, lines, offsets, scan_end)
+    opener_re = None
+    if opener_pattern:
+        try:
+            opener_re = re.compile(opener_pattern, re.I)
+        except re.error:
+            print("[提示] --opener-pattern 不是有效正则，已忽略。")
+    bounds = _build_bounds(toc, anchors, titles, lines, offsets, scan_end, opener_re)
     if len(bounds) < 2:
         return None
     bounds.sort(key=lambda b: b[2])
@@ -1264,7 +1404,7 @@ def process_file(src: Path, out_root: Path, max_chars: int, overlap: int, args):
     chunk_no = 0
     units = None
     if mode == "chapter":
-        plan_info = build_chapter_plan(text)
+        plan_info = build_chapter_plan(text, getattr(args, "opener_pattern", ""))
         plan = plan_info["bounds"] if plan_info else None
         if plan:
             print(f"[标题识别] 找到 {len(plan)} 个章节，按章节切分（一章一个文件）")
@@ -1325,6 +1465,7 @@ def process_file(src: Path, out_root: Path, max_chars: int, overlap: int, args):
             "---\n\n",
         ]
         content = "".join(fm_lines) + f"{head}\n\n" + f"{piece}\n"
+        content = obsidian_img_links(content)
         atomic_write(fpath, content)
         chunks_meta.append((chunk_no, fname, title, len(piece), preview, idx))
 
@@ -1379,7 +1520,7 @@ def process_file(src: Path, out_root: Path, max_chars: int, overlap: int, args):
             f"# 🔍 {book_name} 解析全文\n\n"
             f"> 由 MinerU 云端解析生成（扫描版 OCR + 公式转 LaTeX），"
             f"共 {total_chars:,} 字\n\n"
-            f"{ocr_raw}\n",
+            f"{obsidian_img_links(ocr_raw)}\n",
         )
     # 全书目录大纲（章节清单 + 进度勾选）
     chapter_files = {}
@@ -1480,6 +1621,12 @@ def main():
         "--book-name",
         default="",
         help="指定书名/文件夹名（重切分 .md 全文时用于生成文件夹名）",
+    )
+    parser.add_argument(
+        "--opener-pattern",
+        default="",
+        help="章节标题缺失时的补充定位：填每章都出现的开场小节标题正则，"
+        "如意大利语教材每课都有的 'Impariamo a parlare'（可选）",
     )
     parser.add_argument(
         "--no-keep-images",
