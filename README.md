@@ -19,8 +19,19 @@
 | 软件 | 说明 |
 | --- | --- |
 | Obsidian | 必需。从 https://obsidian.md 下载 |
-| Python 3.10+ | 拆书工具需要。安装时勾选「Add Python to PATH」 |
-| Codex CLI 或 Claude Code | Claudian 的 AI 后端，二选一安装即可 |
+| Python / Node.js / Git / Claude Code / cc-switch | 双击「环境配置.bat」自动检测安装，缺什么装什么（版本来源：winget > 官方接口 > 内置清单） |
+
+### 环境配置.bat（推荐先跑一次）
+
+新电脑上先双击仓库根目录的「**环境配置.bat**」，它会：
+
+1. 检测 Python、Node.js、Git for Windows、Claude Code、cc-switch 是否已安装
+2. 缺失的自动安装；已装但版本较旧的询问是否升级（`-Update` 直接升级）
+3. 装完后自动打开 cc-switch：添加供应商、粘贴 API Key、切换启用
+4. 然后打开 Obsidian，Claudian 后端选择 Claude Code 即可使用
+
+只查不装可用 `环境配置.bat -CheckOnly`；跳过 Claude Code 用
+`环境配置.bat -SkipClaude`。
 
 ### 步骤
 
