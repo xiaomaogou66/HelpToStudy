@@ -29,19 +29,22 @@ jobs:
         env:
           TAG_INPUT: ${{ inputs.tag }}
         run: |
-          Write-Host "::error::STEP_A started"
-          $tag = "v1.0.9"
-          Write-Host "::error::STEP_B tag=$tag"
+          $tag = $env:TAG_INPUT
+          if (-not $tag) {
+            if ($env:GITHUB_REF_TYPE -eq "tag") { $tag = $env:GITHUB_REF_NAME }
+            else { $tag = "v" + (Get-Date -Format "yyyy.MM.dd") }
+          }
+          $tag = $tag.Trim()
+          if ($tag -notmatch '^v[0-9A-Za-z._-]+$') { throw "Invalid tag: $tag" }
           $outDir = Join-Path $env:RUNNER_TEMP "release"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-          Write-Host "::error::STEP_C dir ok"
           & .\scripts\build-release.ps1 -Tag $tag -Repo $env:GITHUB_REPOSITORY -OutDir $outDir
-          Write-Host "::error::STEP_D build ok"
           Set-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag" -Encoding ascii
-          Write-Host "::error::STEP_E output ok"
+          # 脚本内的 robocopy 成功退出码为 1，runner 会在脚本末尾隐式 exit $LASTEXITCODE，
+          # 必须显式 exit 0 避免被误判为失败。
+          exit 0
 
       - name: Create GitHub Release
-        if: false
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
