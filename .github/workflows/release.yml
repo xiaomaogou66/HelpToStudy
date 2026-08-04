@@ -26,28 +26,9 @@ jobs:
       - name: Build release assets
         id: build
         shell: pwsh
-        env:
-          TAG_INPUT: ${{ inputs.tag }}
         run: |
-          "## Build step started`n`npwsh $($PSVersionTable.PSVersion)" | Add-Content -Path $env:GITHUB_STEP_SUMMARY
-          try {
-            $tag = $env:TAG_INPUT
-            if (-not $tag) {
-              if ($env:GITHUB_REF_TYPE -eq "tag") { $tag = $env:GITHUB_REF_NAME }
-              else { $tag = "v" + (Get-Date -Format "yyyy.MM.dd") }
-            }
-            $tag = $tag.Trim()
-            if ($tag -notmatch '^v[0-9A-Za-z._-]+$') { throw "非法版本号: $tag" }
-            $outDir = Join-Path $env:RUNNER_TEMP "release"
-            New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-            & .\scripts\build-release.ps1 -Tag $tag -Repo $env:GITHUB_REPOSITORY -OutDir $outDir
-            Set-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag" -Encoding ascii
-            "## Build step SUCCESS tag=$tag" | Add-Content -Path $env:GITHUB_STEP_SUMMARY
-          } catch {
-            "## Build step FAILED`n`n- Message: $($_.Exception.Message)`n- Stack: $($_.ScriptStackTrace)`n- Location: $($_.InvocationInfo.PositionMessage)" | Add-Content -Path $env:GITHUB_STEP_SUMMARY
-            $_.Exception | Format-List * -Force | Out-String | Add-Content -Path $env:GITHUB_STEP_SUMMARY
-            throw
-          }
+          "## Marker A reached`n`npwsh $($PSVersionTable.PSVersion)" | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+          Get-ChildItem .\scripts | Select-Object -ExpandProperty Name | Out-String | Add-Content -Path $env:GITHUB_STEP_SUMMARY
 
       - name: Create GitHub Release
         if: false
