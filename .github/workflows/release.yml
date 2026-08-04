@@ -29,35 +29,16 @@ jobs:
         env:
           TAG_INPUT: ${{ inputs.tag }}
         run: |
-          $debug = Join-Path $env:GITHUB_WORKSPACE "debug-output.txt"
-          try {
-            "STEP 0: start" | Set-Content -Path $debug
-            $tag = $env:TAG_INPUT
-            if (-not $tag) {
-              if ($env:GITHUB_REF_TYPE -eq "tag") { $tag = $env:GITHUB_REF_NAME }
-              else { $tag = "v" + (Get-Date -Format "yyyy.MM.dd") }
-            }
-            $tag = $tag.Trim()
-            "STEP 1: tag=[$tag]" | Add-Content -Path $debug
-            if ($tag -notmatch '^v[0-9A-Za-z._-]+$') { throw "Invalid tag: $tag" }
-            $outDir = Join-Path $env:RUNNER_TEMP "release"
-            New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-            "STEP 2: calling build-release.ps1" | Add-Content -Path $debug
-            & .\scripts\build-release.ps1 -Tag $tag -Repo $env:GITHUB_REPOSITORY -OutDir $outDir
-            "STEP 3: build call returned" | Add-Content -Path $debug
-            Set-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag" -Encoding ascii
-            "STEP 4: GITHUB_OUTPUT written" | Add-Content -Path $debug
-            "ALL OK" | Add-Content -Path $debug
-          } catch {
-            "EXCEPTION: $($_.Exception.Message)" | Add-Content -Path $debug
-            $_.ScriptStackTrace | Add-Content -Path $debug
-          }
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add debug-output.txt
-          git commit -m "debug output from CI" 2>&1 | Out-Null
-          git push origin HEAD:ci-debug --force 2>&1 | Out-Null
-          exit 0
+          Write-Host "::error::STEP_A started"
+          $tag = "v1.0.9"
+          Write-Host "::error::STEP_B tag=$tag"
+          $outDir = Join-Path $env:RUNNER_TEMP "release"
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+          Write-Host "::error::STEP_C dir ok"
+          & .\scripts\build-release.ps1 -Tag $tag -Repo $env:GITHUB_REPOSITORY -OutDir $outDir
+          Write-Host "::error::STEP_D build ok"
+          Set-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag" -Encoding ascii
+          Write-Host "::error::STEP_E output ok"
 
       - name: Create GitHub Release
         if: false
