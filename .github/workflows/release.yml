@@ -31,26 +31,25 @@ jobs:
         run: |
           $debug = Join-Path $env:GITHUB_WORKSPACE "debug-output.txt"
           try {
-            "pwsh: $($PSVersionTable.PSVersion)" | Set-Content -Path $debug
-            "cwd: $(Get-Location)" | Add-Content -Path $debug
-            "ref_type=[$env:GITHUB_REF_TYPE] ref_name=[$env:GITHUB_REF_NAME]" | Add-Content -Path $debug
-            "repo=[$env:GITHUB_REPOSITORY] runner_temp=[$env:RUNNER_TEMP]" | Add-Content -Path $debug
+            "STEP 0: start" | Set-Content -Path $debug
             $tag = $env:TAG_INPUT
             if (-not $tag) {
               if ($env:GITHUB_REF_TYPE -eq "tag") { $tag = $env:GITHUB_REF_NAME }
               else { $tag = "v" + (Get-Date -Format "yyyy.MM.dd") }
             }
             $tag = $tag.Trim()
-            "resolved tag=[$tag]" | Add-Content -Path $debug
+            "STEP 1: tag=[$tag]" | Add-Content -Path $debug
             if ($tag -notmatch '^v[0-9A-Za-z._-]+$') { throw "Invalid tag: $tag" }
             $outDir = Join-Path $env:RUNNER_TEMP "release"
             New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-            & .\scripts\build-release.ps1 -Tag $tag -Repo $env:GITHUB_REPOSITORY -OutDir $outDir 2>&1 | ForEach-Object { $_ | Add-Content -Path $debug }
-            if ($LASTEXITCODE -ne 0) { throw "build-release.ps1 exited $LASTEXITCODE" }
+            "STEP 2: calling build-release.ps1" | Add-Content -Path $debug
+            & .\scripts\build-release.ps1 -Tag $tag -Repo $env:GITHUB_REPOSITORY -OutDir $outDir
+            "STEP 3: build call returned" | Add-Content -Path $debug
             Set-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag" -Encoding ascii
-            "BUILD OK" | Add-Content -Path $debug
+            "STEP 4: GITHUB_OUTPUT written" | Add-Content -Path $debug
+            "ALL OK" | Add-Content -Path $debug
           } catch {
-            "FAILED: $($_.Exception.Message)" | Add-Content -Path $debug
+            "EXCEPTION: $($_.Exception.Message)" | Add-Content -Path $debug
             $_.ScriptStackTrace | Add-Content -Path $debug
           }
           git config user.name "github-actions"
