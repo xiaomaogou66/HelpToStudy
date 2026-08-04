@@ -3,83 +3,77 @@
 一套把「厚教材 → 能真正学会」的固定流程，封装成可一键复现的 Obsidian 库：
 拆书 → 五级水平拆解 → 二八定律学习计划 → 十问测试 → 一页速查表。
 
-这个仓库是**模板 + 一键安装器**：任何一台 Windows 电脑克隆后运行
-`install.ps1`，就会生成一个功能完全一致的「AI 学习工作流」Obsidian 库，
-无需手动配路径、装插件、写启动器。
+这个仓库是**模板 + 一键安装器**：任何一台 Windows 电脑从 Release 下载
+一个引导器（或克隆后运行 `install.ps1`），就会生成一个功能完全一致的
+「AI 学习工作流」Obsidian 库，无需手动配路径、装插件、写启动器。
 
 > 个人学习笔记（`03-学习主题/*`、`04-教材分块/*`、API 密钥、会话记录）
 > 默认不会进入本仓库，也不会被安装脚本带入新库。
 
 ---
 
-## 一键安装（Windows）
+## 一键安装（Windows 10 / 11）
 
-### 前置条件
+### 推荐方式：Release 单文件引导器
 
-| 软件 | 说明 |
+不用克隆仓库、不用手动解压。到本仓库的 **Releases** 页面下载最新的
+`HelpToStudy-QuickInstall.bat`，双击运行即可。它会自动完成：
+
+1. 从 Release 下载库压缩包并解压到临时目录
+2. 检测/安装环境：**Obsidian、Python、Node.js、Git for Windows、
+   Claude Code、cc-switch**（已装的最新版直接跳过；缺失的自动安装，
+   版本来源优先级 winget > 官方接口 > 内置清单）
+3. 安装「AI 学习工作流」Obsidian 库（默认
+   `%USERPROFILE%\ObsidianVaults\AI学习工作流`；会弹出文件夹选择框，
+   可自选位置，点「取消」则询问是否用默认位置）
+4. 装完自动用 Obsidian 打开库
+
+> 浏览器若提示「不常见下载」，点击**保留 / 仍要运行**即可（脚本未签名，
+> 内容全部开源，可在仓库里直接审阅）。
+> 不需要自动装环境时，可用 `-SkipEnv` 只装库，参数见下表。
+
+#### 常用参数
+
+在 cmd / PowerShell 中追加参数运行：
+
+```powershell
+.\HelpToStudy-QuickInstall.bat -VaultPath "D:\我的资料\AI学习工作流"
+.\HelpToStudy-QuickInstall.bat -SkipEnv
+.\HelpToStudy-QuickInstall.bat -SkipMineru -NoOpenObsidian
+```
+
+| 参数 | 作用 |
 | --- | --- |
-| Obsidian | 必需。从 https://obsidian.md 下载 |
-| Python / Node.js / Git / Claude Code / cc-switch | 双击「环境配置.bat」自动检测安装，缺什么装什么（版本来源：winget > 官方接口 > 内置清单） |
+| `-SkipEnv` | 跳过环境检测/安装，只装库 |
+| `-SkipClaude` | 跳过 Claude Code 安装 |
+| `-VaultPath "路径"` | 指定库安装位置 |
+| `-NoDialog` | 不弹文件夹选择框，用默认位置 |
+| `-SkipPython` | 跳过 Python 虚拟环境与拆书依赖 |
+| `-SkipMineru` | 不装 MinerU 云端 OCR 工具 |
+| `-NoOpenObsidian` | 装完不自动打开 Obsidian |
+| `-Force` | 目标目录已存在时不询问，直接继续 |
 
-### 环境配置.bat（推荐先跑一次）
+### 备用方式：手动 ZIP 或克隆
 
-新电脑上先双击仓库根目录的「**环境配置.bat**」，它会：
+如果浏览器拦截下载、想离线安装，或想先看看内容再装：
 
-1. 检测 Python、Node.js、Git for Windows、Claude Code、cc-switch 是否已安装
-2. 缺失的自动安装；已装但版本较旧的询问是否升级（`-Update` 直接升级）
-3. 装完后自动打开 cc-switch：添加供应商、粘贴 API Key、切换启用
-4. 然后打开 Obsidian，Claudian 后端选择 Claude Code 即可使用
+1. 到 **Releases** 下载 `HelpToStudy-Vault-<版本>.zip`（或克隆本仓库）
+2. 解压后先双击「**环境配置.bat**」，检测/安装环境
+   （`环境配置.bat -CheckOnly` 只查不装；`环境配置.bat -SkipClaude`
+   跳过 Claude Code；装完会自动打开 cc-switch 供粘贴 API Key）
+3. 再双击「**安装.bat**」按提示安装（效果等同手动运行 `.\install.ps1`）
 
-只查不装可用 `环境配置.bat -CheckOnly`；跳过 Claude Code 用
-`环境配置.bat -SkipClaude`。
+> 「安装.bat」会自动以「绕过执行策略」的方式启动 install.ps1，
+> 只对本次生效、不修改系统设置，因此下载/解压的仓库也能直接双击安装。
 
-### 步骤
+### 装完之后的设置
 
-1. 克隆仓库（或用 GitHub 的 Download ZIP）：
-
-   ```powershell
-   git clone https://github.com/<你的用户名>/ai-learning-workflow.git
-   cd ai-learning-workflow
-   ```
-
-2. **双击仓库根目录的「安装.bat」**，按提示操作即可，无需任何命令行设置。
-   也可以手动用 PowerShell 运行（效果相同）：
-
-   ```powershell
-   .\install.ps1
-   ```
-
-   > 「安装.bat」会自动以「绕过执行策略」的方式启动 install.ps1，
-   > 只对本次生效、不修改系统设置，因此下载/克隆下来的仓库也能直接双击安装。
-   >
-   > 安装时**会弹出「选择文件夹」对话框**，由你决定库装到哪里：
-   > 选中的文件夹就是库目录（默认位置
-   > `%USERPROFILE%\ObsidianVaults\AI学习工作流`）；
-   > 点「取消」则询问是否用默认位置，选 N 会退出安装。
-   > 想固定位置或无人值守安装，可用 `-VaultPath "D:\xxx"` 或加 `-NoDialog`。
-
-   默认安装到 `%USERPROFILE%\ObsidianVaults\AI学习工作流`。
-   常用参数：
-
-   ```powershell
-   .\install.ps1 -VaultPath "D:\我的资料\AI学习工作流"   # 自定义位置
-   .\install.ps1 -OpenObsidian                            # 装完直接打开
-   .\install.ps1 -SkipMineru                              # 不需要扫描版 OCR 时
-   ```
-
-   安装脚本会自动完成：创建目录结构 → 复制模板/提示词/命令/配置 →
-   创建 Python 虚拟环境并安装拆书依赖 → 生成带本机路径的 `_工具/*.bat` 启动器。
-
-3. 用 Obsidian 打开安装好的库文件夹。
-
-   - 首次打开若提示「信任社区插件」，选**信任**（插件文件已随库装好，
-     包含 Copilot、Dataview、QuickAdd、Templater、Claudian、Excalidraw CN）。
-   - 打开右侧边栏的 **Claudian**，在设置中选择后端（本机 Codex 或 Claude Code）。
-
-4. 大部分中英意文书都可以：双击 `_工具\设置MinerU令牌.bat`，
+1. 首次打开若提示「信任社区插件」，选**信任**（插件文件已随库装好，
+   包含 Copilot、Dataview、QuickAdd、Templater、Claudian、Excalidraw CN）。
+2. 打开右侧边栏的 **Claudian**，在设置中选择后端（本机 Codex 或 Claude Code）。
+3. 大部分中英意文书都可以：双击 `_工具\设置MinerU令牌.bat`，
    粘贴 [MinerU](https://mineru.net) 的免费 Token。
-
-5. 打开 `00-使用指南\📖 使用说明.md`，开始你的第一个学习主题。
+4. 打开 `00-使用指南\📖 使用说明.md`，开始你的第一个学习主题。
 
 ---
 
@@ -141,6 +135,18 @@ AI学习工作流/
 
 ## 常见问题
 
+**Q：引导器下载失败 / 离线环境怎么装？**
+A：直接到 Releases 下载 `HelpToStudy-Vault-<版本>.zip`，解压后手动运行
+「环境配置.bat」→「安装.bat」，效果与一键安装相同。
+
+**Q：下载 .bat 时浏览器提示「不常见下载」？**
+A：点击**保留 / 仍要运行**即可。引导器只做下载、解压和调用仓库里的开源脚本，
+不修改系统设置，不放任何可疑内容。
+
+**Q：装过旧版本，怎么升级？**
+A：再次运行一键引导器（或解压新版 ZIP 后运行「安装.bat」）。目标目录已存在时
+会询问是否继续，个人笔记保留，只覆盖/补充工作流文件。
+
 **Q：装完打开 Obsidian 没有 Claudian 图标？**
 A：确认 `.obsidian/community-plugins.json` 已复制且首次打开时选择了「信任」。
 如果插件未加载，可在设置 → 第三方插件中手动启用。
@@ -179,6 +185,24 @@ git push
 ```
 
 想在新电脑上再装一次：重复上面的「一键安装」步骤即可。
+
+### 发布新版本
+
+打 tag 并推送，GitHub Actions 会自动构建发布包并生成 Release：
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+也可以在本地生成资产后手动发布（Actions 不可用时的兜底）：
+
+```powershell
+.\scripts\build-release.ps1 -Tag v1.0.0 -Repo xiaomaogou66/HelpToStudy -OutDir .\dist
+```
+
+会生成 `HelpToStudy-Vault-<版本>.zip`、`HelpToStudy-QuickInstall.bat` 和
+`release-notes.md`；手动发布时把前两个文件作为 Release 资产上传即可。
 
 ### 库可以随便拷贝、移动
 

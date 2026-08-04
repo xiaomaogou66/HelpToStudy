@@ -3,7 +3,7 @@
 .SYNOPSIS
     AI 学习工作流 · 环境配置脚本
 .DESCRIPTION
-    检测并安装：Python、Node.js、Git for Windows、Claude Code、cc-switch。
+    检测并安装：Obsidian、Python、Node.js、Git for Windows、Claude Code、cc-switch。
     版本来源优先级：winget > 官方接口 > 内置清单。
     已装且最新 -> 跳过；缺失 -> 自动安装；已装但较旧 -> 询问是否升级
     （-Update 直接升级，不再询问）。
@@ -55,6 +55,11 @@ $Fallback = @{
         version  = "3.16.5"
         url      = "https://github.com/farion1231/cc-switch/releases/download/v3.16.5/CC-Switch-v3.16.5-Windows.msi"
         wingetId = "farion1231.CC-Switch"
+    }
+    obsidian = @{
+        version  = "0.0.0"
+        url      = ""
+        wingetId = "Obsidian.Obsidian"
     }
 }
 
@@ -178,6 +183,11 @@ function Get-Latest-CCSwitch {
     if ($r -and $r.tag_name -match "v?(\d+\.\d+\.\d+)") { return $Matches[1] }
     return $null
 }
+function Get-Latest-Obsidian {
+    $r = Get-Json "https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest"
+    if ($r -and $r.tag_name -match "v?(\d+\.\d+\.\d+)") { return $Matches[1] }
+    return $null
+}
 
 function Get-LatestWithPriority {
     param([string]$Name)
@@ -281,6 +291,19 @@ function Get-CCSwitchInstalled {
             return "0.0.0"
         }
     }
+    return $null
+}
+function Get-ObsidianInstalled {
+    $exe = Join-Path $env:LOCALAPPDATA "Obsidian\Obsidian.exe"
+    if (Test-Path -LiteralPath $exe) {
+        try {
+            $v = (Get-Item -LiteralPath $exe).VersionInfo.FileVersion
+            if ($v -match "(\d+\.\d+(?:\.\d+)*)") { return $Matches[1] }
+        } catch {}
+        return "0.0.0"
+    }
+    $w = Get-WingetInstalled "Obsidian.Obsidian"
+    if ($w) { return $w }
     return $null
 }
 
@@ -390,6 +413,26 @@ function Install-CCSwitch {
         Ensure-UserPath @($dest)
     }
 }
+function Install-Obsidian {
+    param([string]$Ver)
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        & winget install --id "Obsidian.Obsidian" --exact --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+        if ($LASTEXITCODE -eq 0) { return }
+        Write-Warn "winget 安装 Obsidian 失败（码 $LASTEXITCODE），改用官方安装器"
+    }
+    $r = Get-Json "https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest"
+    $url = $null
+    if ($r -and $r.assets) {
+        $a = $r.assets | Where-Object { $_.name -match "^Obsidian\.\d+\.\d+\.\d+\.exe$" } | Select-Object -First 1
+        if ($a) { $url = $a.browser_download_url }
+    }
+    if (-not $url) {
+        throw "无法获取 Obsidian 官方安装包地址，请从 https://obsidian.md 手动下载后重试"
+    }
+    $tmp = Join-Path $env:TEMP ("Obsidian-" + [IO.Path]::GetFileName($url))
+    Invoke-Download $url $tmp
+    Start-Process -FilePath $tmp -ArgumentList @("/S") -Wait
+}
 
 # ---------- 核心：检测 + 决策 ----------
 function Ensure-Tool {
@@ -450,6 +493,10 @@ if ($CheckOnly) { Write-Host "   （检测模式：只检查，不安装）" -Fo
 Write-Host "============================================" -ForegroundColor Cyan
 
 $script:LatestVersions = @{}
+
+Ensure-Tool "obsidian" "Obsidian" `
+    { Get-ObsidianInstalled } `
+    { Install-Obsidian }
 
 Ensure-Tool "python" "Python" `
     { Get-PythonInstalled } `
