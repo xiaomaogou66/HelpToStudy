@@ -11,6 +11,14 @@
 > 默认不会进入本仓库，也不会被安装脚本带入新库。
 
 ---
+## 运行前提：两个 API
+
+本项目是 AI 驱动的工作流，使用前需要准备以下两个 API：
+
+| 需要 | 用途 | 怎么获得 |
+| --- | --- | --- |
+| AI 供应商的 API | 拆书、五级拆解、出学案、十问测试、生成速查表等全部 AI 功能 | 任选一种：① 本机安装并登录 Codex CLI 或 Claude Code；② 在 AI 供应商（如 Anthropic、OpenAI 等）后台申请 API Key，安装后粘贴到 cc-switch / Claudian 设置中 |
+| MinerU 的 API Token | 扫描版、数学公式类教材的云端 OCR 解析（公式转 LaTeX） | 到 [MinerU 官网](https://mineru.net) 注册账号，免费领取 Token；安装后双击 `_工具\设置MinerU令牌.bat` 粘贴即可 
 
 ## 一键安装（Windows 10 / 11）
 
