@@ -1,0 +1,8 @@
+pwsh: 7.6.4
+cwd: D:\a\HelpToStudy\HelpToStudy
+ref_type=[tag] ref_name=[v1.0.6]
+repo=[xiaomaogou66/HelpToStudy] runner_temp=[D:\a\_temp]
+resolved tag=[v1.0.6]
+FAILED: build-release.ps1 exited 1
+at <ScriptBlock>, D:\a\_temp\2c778a79-59e6-4a62-b86a-88b587dfce3c.ps1: line 19
+at <ScriptBlock>, <No file>: line 1
