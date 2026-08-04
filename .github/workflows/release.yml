@@ -29,7 +29,36 @@ jobs:
         env:
           TAG_INPUT: ${{ inputs.tag }}
         run: |
-          "## Marker B reached`n`nTAG_INPUT=[$env:TAG_INPUT]" | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+          $debug = Join-Path $env:GITHUB_WORKSPACE "debug-output.txt"
+          try {
+            "pwsh: $($PSVersionTable.PSVersion)" | Set-Content -Path $debug
+            "cwd: $(Get-Location)" | Add-Content -Path $debug
+            "ref_type=[$env:GITHUB_REF_TYPE] ref_name=[$env:GITHUB_REF_NAME]" | Add-Content -Path $debug
+            "repo=[$env:GITHUB_REPOSITORY] runner_temp=[$env:RUNNER_TEMP]" | Add-Content -Path $debug
+            $tag = $env:TAG_INPUT
+            if (-not $tag) {
+              if ($env:GITHUB_REF_TYPE -eq "tag") { $tag = $env:GITHUB_REF_NAME }
+              else { $tag = "v" + (Get-Date -Format "yyyy.MM.dd") }
+            }
+            $tag = $tag.Trim()
+            "resolved tag=[$tag]" | Add-Content -Path $debug
+            if ($tag -notmatch '^v[0-9A-Za-z._-]+$') { throw "Invalid tag: $tag" }
+            $outDir = Join-Path $env:RUNNER_TEMP "release"
+            New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+            & .\scripts\build-release.ps1 -Tag $tag -Repo $env:GITHUB_REPOSITORY -OutDir $outDir 2>&1 | ForEach-Object { $_ | Add-Content -Path $debug }
+            if ($LASTEXITCODE -ne 0) { throw "build-release.ps1 exited $LASTEXITCODE" }
+            Set-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag" -Encoding ascii
+            "BUILD OK" | Add-Content -Path $debug
+          } catch {
+            "FAILED: $($_.Exception.Message)" | Add-Content -Path $debug
+            $_.ScriptStackTrace | Add-Content -Path $debug
+          }
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add debug-output.txt
+          git commit -m "debug output from CI" 2>&1 | Out-Null
+          git push origin HEAD:main 2>&1 | Out-Null
+          exit 0
 
       - name: Create GitHub Release
         if: false
