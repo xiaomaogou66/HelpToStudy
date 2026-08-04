@@ -29,19 +29,29 @@ jobs:
         env:
           TAG_INPUT: ${{ inputs.tag }}
         run: |
-          $tag = $env:TAG_INPUT
-          if (-not $tag) {
-            if ($env:GITHUB_REF_TYPE -eq "tag") { $tag = $env:GITHUB_REF_NAME }
-            else { $tag = "v" + (Get-Date -Format "yyyy.MM.dd") }
+          try {
+            $tag = $env:TAG_INPUT
+            if (-not $tag) {
+              if ($env:GITHUB_REF_TYPE -eq "tag") { $tag = $env:GITHUB_REF_NAME }
+              else { $tag = "v" + (Get-Date -Format "yyyy.MM.dd") }
+            }
+            $tag = $tag.Trim()
+            Write-Host "resolved tag: [$tag]"
+            if ($tag -notmatch '^v[0-9A-Za-z._-]+$') { throw "非法版本号: $tag" }
+            $outDir = Join-Path $env:RUNNER_TEMP "release"
+            New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+            Write-Host "cwd: $(Get-Location)"
+            Write-Host "pwsh: $($PSVersionTable.PSVersion)"
+            & .\scripts\build-release.ps1 -Tag $tag -Repo $env:GITHUB_REPOSITORY -OutDir $outDir
+            Set-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag" -Encoding ascii
+          } catch {
+            Write-Host "::error::BUILD STEP FAILED: $($_.Exception.Message)"
+            Write-Host "::error::$($_.ScriptStackTrace)"
+            throw
           }
-          $tag = $tag.Trim()
-          if ($tag -notmatch '^v[0-9A-Za-z._-]+$') { throw "非法版本号: $tag" }
-          $outDir = Join-Path $env:RUNNER_TEMP "release"
-          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-          & .\scripts\build-release.ps1 -Tag $tag -Repo $env:GITHUB_REPOSITORY -OutDir $outDir
-          Set-Content -Path $env:GITHUB_OUTPUT -Value "tag=$tag" -Encoding ascii
 
       - name: Create GitHub Release
+        if: false
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
